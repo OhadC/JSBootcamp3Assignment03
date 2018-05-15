@@ -48,6 +48,5 @@ li {
 }
 
 li.active {
-    background-color: red;
-    outline: none;
+    background-color: lightskyblue;
 }

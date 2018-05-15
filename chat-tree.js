@@ -4,7 +4,6 @@ function ChatTree(element) {
 
     element.onclick = event => {
         event.stopPropagation()
-        console.log('onclick', event)
         const srcElement = event.srcElement
         if (srcElement.localName === 'li') {
             setActiveElement(srcElement)
@@ -12,17 +11,14 @@ function ChatTree(element) {
     }
     element.ondblclick = event => {
         event.stopPropagation()
-        console.log('ondblclick', event)
         const srcElement = event.srcElement
         if (srcElement.localName === 'li' && srcElement.dataset.type === 'group') {
-            setActiveElement(srcElement)
             toggleGroup(srcElement)
         }
     }
 
     element.onkeydown = event => {
         event.stopPropagation()
-        console.log('onkeydown', event)
         switch (event.key) {
             case 'ArrowUp':
                 if (activeElement.previousSibling) setActiveElement(activeElement.previousSibling)
@@ -31,9 +27,7 @@ function ChatTree(element) {
                 if (activeElement.nextSibling) setActiveElement(activeElement.nextSibling)
                 break
             case 'ArrowRight':
-                if (activeElement.dataset.type === 'group') {
-                    expandGroup(activeElement)
-                }
+                if (activeElement.dataset.type === 'group') expandGroup(activeElement)
                 break
             case 'ArrowLeft':
                 if (activeElement.dataset.type !== 'group' || !activeElement.dataset.expanded) {
@@ -44,9 +38,7 @@ function ChatTree(element) {
                 }
                 break
             case 'Enter':
-                if (activeElement.dataset.type === 'group') {
-                    toggleGroup(activeElement)
-                }
+                if (activeElement.dataset.type === 'group') toggleGroup(activeElement)
                 break
         }
     }
@@ -66,24 +58,28 @@ function ChatTree(element) {
         groupElement.dataset.expanded = 't'
     }
     function foldGroup(groupElement) {
-        const groupElementPosition = groupElement.dataset.position
         let currElement = groupElement.nextSibling
-        while (currElement && currElement.dataset.position.startsWith(groupElementPosition)) { // TODO: external function
+        while (isGroupOf(groupElement, currElement)) { // TODO: external function
             const nextElement = currElement.nextSibling
             element.removeChild(currElement)
             currElement = nextElement
         }
         groupElement.dataset.expanded = ''
+
+        function isGroupOf(groupElement, childElement) {
+            const groupElementPosition = groupElement.dataset.position
+            return currElement && currElement.dataset.position.startsWith(groupElementPosition)
+        }
     }
 
     function getItemByPosition(position) {
         return _getItem(itemsArray, ...position.split(','))
 
-        function _getItem(items, index, ...positionArray) {
-            if (!positionArray.length) {
+        function _getItem(items, index, ...rest) {
+            if (!rest.length) {
                 return items[index]
             }
-            return _getItem(items[index].items, ...positionArray)
+            return _getItem(items[index].items, ...rest)
         }
     }
 
@@ -99,6 +95,7 @@ function ChatTree(element) {
     }
 
     function setActiveElement(toActiveElement) {
+        if (activeElement === toActiveElement) return
         activeElement && activeElement.classList.remove("active")
         toActiveElement.classList.add("active")
         activeElement = toActiveElement
@@ -107,7 +104,6 @@ function ChatTree(element) {
     function addListItem(item, position, addAfter) {
         const li = document.createElement("li")
         const node = document.createTextNode(item.name)
-        li.setAttribute("tabindex", "-1")
         li.appendChild(node)
 
         position = position.toString()
