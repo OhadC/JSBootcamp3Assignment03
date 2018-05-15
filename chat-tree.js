@@ -1,24 +1,21 @@
 function ChatTree(element) {
     let itemsArray
-    let focusedElem
+    let activeElement
 
-    element.onfocus = event => {
-        console.log('onfocus', event)
-        focusOnElement()
-    }
-    element.onblur = event => {
-        console.log('onblur', event)
-    }
     element.onclick = event => {
         event.stopPropagation()
         console.log('onclick', event)
-        focusOnElement(document.activeElement)
+        const srcElement = event.srcElement
+        if (srcElement.localName === 'li') {
+            setActiveElement(srcElement)
+        }
     }
     element.ondblclick = event => {
         event.stopPropagation()
         console.log('ondblclick', event)
         const srcElement = event.srcElement
         if (srcElement.localName === 'li' && srcElement.dataset.type === 'group') {
+            setActiveElement(srcElement)
             toggleGroup(srcElement)
         }
     }
@@ -28,54 +25,50 @@ function ChatTree(element) {
         console.log('onkeydown', event)
         switch (event.key) {
             case 'ArrowUp':
-                if (focusedElem.previousSibling) focusOnElement(focusedElem.previousSibling)
+                if (activeElement.previousSibling) setActiveElement(activeElement.previousSibling)
                 break
             case 'ArrowDown':
-                if (focusedElem.nextSibling) focusOnElement(focusedElem.nextSibling)
+                if (activeElement.nextSibling) setActiveElement(activeElement.nextSibling)
                 break
             case 'ArrowRight':
-                if (focusedElem.dataset.type === 'group') {
-                    expandGroup(focusedElem)
+                if (activeElement.dataset.type === 'group') {
+                    expandGroup(activeElement)
                 }
                 break
             case 'ArrowLeft':
-                if (focusedElem.dataset.type !== 'group' || !focusedElem.dataset.expanded) {
-                    const parentGroup = getParentGroup(focusedElem)
-                    if (parentGroup) {
-                        focusOnElement(parentGroup)
-                    } else {
-                        focusOnElement(element.firstChild)
-                    }
+                if (activeElement.dataset.type !== 'group' || !activeElement.dataset.expanded) {
+                    const parentGroup = getGroupOfElement(activeElement)
+                    setActiveElement(parentGroup || element.firstChild)
                 } else {
-                    foldGroup(focusedElem)
+                    foldGroup(activeElement)
                 }
                 break
             case 'Enter':
-                if (focusedElem.dataset.type === 'group') {
-                    toggleGroup(focusedElem)
+                if (activeElement.dataset.type === 'group') {
+                    toggleGroup(activeElement)
                 }
                 break
         }
     }
 
     function toggleGroup(groupElement) {
-        if (focusedElem.dataset.expanded) {
-            foldGroup(focusedElem)
+        if (groupElement.dataset.expanded) {
+            foldGroup(groupElement)
         } else {
-            expandGroup(focusedElem)
+            expandGroup(groupElement)
         }
     }
     function expandGroup(groupElement) {
         if (groupElement.dataset.expanded) return
-        const elemPosition = groupElement.dataset.position
-        const item = getItem(elemPosition)
-        item.items.forEach((item, index) => addLi(item, `${elemPosition},${index}`, groupElement))
+        const groupElementPosition = groupElement.dataset.position
+        const groupItem = getItemByPosition(groupElementPosition)
+        groupItem.items.forEach((item, index) => addListItem(item, `${groupElementPosition},${index}`, groupElement))
         groupElement.dataset.expanded = 't'
     }
     function foldGroup(groupElement) {
-        const elementPosition = groupElement.dataset.position
+        const groupElementPosition = groupElement.dataset.position
         let currElement = groupElement.nextSibling
-        while (currElement && currElement.dataset.position.startsWith(elementPosition)) { // TODO: external function
+        while (currElement && currElement.dataset.position.startsWith(groupElementPosition)) { // TODO: external function
             const nextElement = currElement.nextSibling
             element.removeChild(currElement)
             currElement = nextElement
@@ -83,21 +76,21 @@ function ChatTree(element) {
         groupElement.dataset.expanded = ''
     }
 
-    function getItem(position) {
-        return _getItem(itemsArray, position.split(','))
+    function getItemByPosition(position) {
+        return _getItem(itemsArray, ...position.split(','))
 
-        function _getItem(items, positionArray) {
-            if (positionArray.length === 1) {
-                return items[positionArray[0]]
+        function _getItem(items, index, ...positionArray) {
+            if (!positionArray.length) {
+                return items[index]
             }
-            return _getItem(items[positionArray[0]].items, positionArray.slice(1))
+            return _getItem(items[index].items, ...positionArray)
         }
     }
 
-    function getParentGroup(element) {
-        const elementPosition = element.dataset.position
+    function getGroupOfElement(childElement) {
+        const elementPosition = childElement.dataset.position
         const parentPosition = elementPosition.split(',').slice(0, -1).join(',')
-        for (let currSibling = element.previousSibling; currSibling; currSibling = currSibling.previousSibling) {
+        for (let currSibling = childElement.previousSibling; currSibling; currSibling = currSibling.previousSibling) {
             if (currSibling.dataset.position === parentPosition) {
                 return currSibling
             }
@@ -105,38 +98,37 @@ function ChatTree(element) {
         return null
     }
 
-    function focusOnElement(elementToFocus) {
-        focusedElem = elementToFocus || focusedElem
-        if (focusedElem) focusedElem.focus()
+    function setActiveElement(toActiveElement) {
+        activeElement && activeElement.classList.remove("active")
+        toActiveElement.classList.add("active")
+        activeElement = toActiveElement
     }
 
-    function addLi(item, position, afterLi) {
+    function addListItem(item, position, addAfter) {
         const li = document.createElement("li")
         const node = document.createTextNode(item.name)
         li.setAttribute("tabindex", "-1")
         li.appendChild(node)
 
         position = position.toString()
-        const level = position.split(",").length - 1
-        li.setAttribute('style', `padding-left: ${(level + 1) * 1}em`)
-
         li.dataset.position = position
+
+        const level = position.split(",").length - 1
+        li.setAttribute('style', `padding-left: ${(level + 0.5) * 1}em`)
+
         li.dataset.type = item.type
         if (item.type === 'group') {
             li.dataset.expanded = ''
         }
 
-        if (afterLi) {
-            element.insertBefore(li, afterLi.nextSibling)
-        } else {
-            element.appendChild(li)
-        }
+        element.insertBefore(li, addAfter && addAfter.nextSibling)
+
     }
 
     function load(items) {
         itemsArray = items
-        items.forEach((item, index) => addLi(item, index))
-        focusOnElement(element.firstChild)
+        items.forEach((item, index) => addListItem(item, index))
+        setActiveElement(element.firstChild)
     }
     function clear() {
         while (element.firstChild) {
