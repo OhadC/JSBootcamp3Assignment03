@@ -2,24 +2,31 @@ function ChatTree(element) {
     let itemsArray
     let focusedElem
 
-    element.onfocus = () => {
+    element.onfocus = event => {
+        console.log('onfocus', event)
         focusOnElement()
+    }
+    element.onblur = event => {
+        console.log('onblur', event)
     }
     element.onclick = event => {
         event.stopPropagation()
+        console.log('onclick', event)
         focusOnElement(document.activeElement)
     }
     element.ondblclick = event => {
         event.stopPropagation()
         console.log('ondblclick', event)
         const srcElement = event.srcElement
-        if(srcElement.localName === 'li' && srcElement.dataset.type === 'group'){
-            tuggleGroup(srcElement)
+        if (srcElement.localName === 'li' && srcElement.dataset.type === 'group') {
+            toggleGroup(srcElement)
         }
     }
 
-    element.onkeydown = e => {
-        switch (e.key) {
+    element.onkeydown = event => {
+        event.stopPropagation()
+        console.log('onkeydown', event)
+        switch (event.key) {
             case 'ArrowUp':
                 if (focusedElem.previousSibling) focusOnElement(focusedElem.previousSibling)
                 break
@@ -45,13 +52,13 @@ function ChatTree(element) {
                 break
             case 'Enter':
                 if (focusedElem.dataset.type === 'group') {
-                    tuggleGroup(focusedElem)
+                    toggleGroup(focusedElem)
                 }
                 break
         }
     }
 
-    function tuggleGroup(groupElement) {
+    function toggleGroup(groupElement) {
         if (focusedElem.dataset.expanded) {
             foldGroup(focusedElem)
         } else {
