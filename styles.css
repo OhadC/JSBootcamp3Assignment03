@@ -51,15 +51,15 @@ li.active {
     background-color: lightskyblue;
 }
 
-li[data-expanded=''][data-type='group']::after {
-    background: url('https://raw.githubusercontent.com/iconic/open-iconic/master/png/caret-right.png') 50% no-repeat;
-}
-
 li[data-type='group']::after {
     position: absolute;
     right: 0.5em;
     height: 1em;
     width: 1em;
+    background: url('https://raw.githubusercontent.com/iconic/open-iconic/master/png/caret-right.png') 50% no-repeat;
+    content: '';
+}
+
+li[data-type='group'][expanded]::after {
     background: url('https://raw.githubusercontent.com/iconic/open-iconic/master/png/caret-bottom.png') 50% no-repeat;
-    content: ''
 }

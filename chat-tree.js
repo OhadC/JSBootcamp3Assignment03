@@ -30,7 +30,7 @@ function ChatTree(element) {
                 if (activeElement.dataset.type === 'group') expandGroup(activeElement)
                 break
             case 'ArrowLeft':
-                if (activeElement.dataset.type !== 'group' || !activeElement.dataset.expanded) {
+                if (activeElement.dataset.type !== 'group' || !activeElement.hasAttribute('expanded')) {
                     const parentGroup = getGroupOfElement(activeElement)
                     setActiveElement(parentGroup || element.firstChild)
                 } else {
@@ -44,18 +44,19 @@ function ChatTree(element) {
     }
 
     function toggleGroup(groupElement) {
-        if (groupElement.dataset.expanded) {
+        if (groupElement.hasAttribute('expanded')) {
             foldGroup(groupElement)
         } else {
             expandGroup(groupElement)
         }
     }
     function expandGroup(groupElement) {
-        if (groupElement.dataset.expanded) return
+        if (groupElement.hasAttribute('expanded')) return
         const groupElementPosition = groupElement.dataset.position
         const groupItem = getItemByPosition(groupElementPosition)
-        groupItem.items.forEach((item, index) => addListItem(item, `${groupElementPosition},${index}`, groupElement))
-        groupElement.dataset.expanded = 't'
+        const addListItemsBefore = groupElement.nextSibling
+        groupItem.items.forEach((item, index) => addListItem(item, `${groupElementPosition},${index}`, addListItemsBefore))
+        groupElement.setAttribute('expanded', '')
     }
     function foldGroup(groupElement) {
         let currElement = groupElement.nextSibling
@@ -64,7 +65,7 @@ function ChatTree(element) {
             element.removeChild(currElement)
             currElement = nextElement
         }
-        groupElement.dataset.expanded = ''
+        groupElement.removeAttribute('expanded')
 
         function isGroupOf(groupElement, childElement) {
             const groupElementPosition = groupElement.dataset.position
@@ -101,7 +102,7 @@ function ChatTree(element) {
         activeElement = toActiveElement
     }
 
-    function addListItem(item, position, addAfter) {
+    function addListItem(item, position, addBefore) {
         const li = document.createElement("li")
         const node = document.createTextNode(item.name)
         li.appendChild(node)
@@ -113,15 +114,13 @@ function ChatTree(element) {
         li.setAttribute('style', `padding-left: ${(level + 0.5) * 1}em`)
 
         li.dataset.type = item.type
-        if (item.type === 'group') {
-            li.dataset.expanded = ''
-        }
 
-        element.insertBefore(li, addAfter && addAfter.nextSibling)
+        element.insertBefore(li, addBefore)
 
     }
 
     function load(items) {
+        if (itemsArray) clear()
         itemsArray = items
         items.forEach((item, index) => addListItem(item, index))
         setActiveElement(element.firstChild)
@@ -130,6 +129,7 @@ function ChatTree(element) {
         while (element.firstChild) {
             element.removeChild(element.firstChild)
         }
+        itemsArray = null
     }
     return {
         load,
