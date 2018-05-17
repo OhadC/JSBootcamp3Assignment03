@@ -27,10 +27,10 @@ function ChatTree(element) {
                 if (activeElement.nextSibling) setActiveElement(activeElement.nextSibling)
                 break
             case 'ArrowRight':
-                if (activeElement.dataset.type === 'group') expandGroup(activeElement)
+                if (isGroup(activeElement)) expandGroup(activeElement)
                 break
             case 'ArrowLeft':
-                if (activeElement.dataset.type !== 'group' || !activeElement.hasAttribute('expanded')) {
+                if (!isGroup(activeElement) || !isGroupExpanded(activeElement)) {
                     const parentGroup = getGroupOfElement(activeElement)
                     setActiveElement(parentGroup || element.firstChild)
                 } else {
@@ -38,39 +38,35 @@ function ChatTree(element) {
                 }
                 break
             case 'Enter':
-                if (activeElement.dataset.type === 'group') toggleGroup(activeElement)
+                if (isGroup(activeElement)) toggleGroup(activeElement)
                 break
         }
     }
 
     function toggleGroup(groupElement) {
-        if (groupElement.hasAttribute('expanded')) {
+        if (isGroupExpanded(groupElement)) {
             foldGroup(groupElement)
         } else {
             expandGroup(groupElement)
         }
     }
     function expandGroup(groupElement) {
-        if (groupElement.hasAttribute('expanded')) return
+        if (isGroupExpanded(groupElement)) return
         const groupElementPosition = groupElement.dataset.position
         const groupItem = getItemByPosition(groupElementPosition)
         const addListItemsBefore = groupElement.nextSibling
         groupItem.items.forEach((item, index) => addListItem(item, `${groupElementPosition},${index}`, addListItemsBefore))
-        groupElement.setAttribute('expanded', '')
+        setGroupExpanded(groupElement, true)
     }
     function foldGroup(groupElement) {
+        if (!isGroupExpanded(groupElement)) return
         let currElement = groupElement.nextSibling
-        while (isGroupOf(groupElement, currElement)) { // TODO: external function
+        while (isGroupOf(groupElement, currElement)) {
             const nextElement = currElement.nextSibling
             element.removeChild(currElement)
             currElement = nextElement
         }
-        groupElement.removeAttribute('expanded')
-
-        function isGroupOf(groupElement, childElement) {
-            const groupElementPosition = groupElement.dataset.position
-            return currElement && currElement.dataset.position.startsWith(groupElementPosition)
-        }
+        setGroupExpanded(groupElement, false)
     }
 
     function getItemByPosition(position) {
@@ -118,6 +114,20 @@ function ChatTree(element) {
         element.insertBefore(li, addBefore)
 
     }
+    
+    function isGroup(elem){
+        return elem.dataset.type === 'group'
+    }
+    function isGroupExpanded(groupElem){
+        return groupElem.hasAttribute('expanded')
+    }
+    function setGroupExpanded(groupElem, isExpanded){
+        isExpanded ? groupElem.setAttribute('expanded', '') : groupElem.removeAttribute('expanded')
+    }
+    function isGroupOf(groupElem, childElem) {
+        const groupElemPosition = groupElem.dataset.position
+        return childElem && childElem.dataset.position.startsWith(groupElemPosition)
+    }
 
     function load(items) {
         if (itemsArray) clear()
@@ -135,5 +145,5 @@ function ChatTree(element) {
         load,
         clear,
         element,
-    };
+    }
 }
