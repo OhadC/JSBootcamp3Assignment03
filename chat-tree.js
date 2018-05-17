@@ -12,7 +12,7 @@ function ChatTree(element) {
     element.ondblclick = event => {
         event.stopPropagation()
         const srcElement = event.srcElement
-        if (srcElement.localName === 'li' && srcElement.dataset.type === 'group') {
+        if (srcElement.localName === 'li' && isGroup(srcElement)) {
             toggleGroup(srcElement)
         }
     }
