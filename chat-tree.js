@@ -2,6 +2,13 @@ function ChatTree(element) {
     let itemsArray
     let activeElement
 
+    function setActiveElement(toActiveElement) {
+        if (activeElement === toActiveElement) return
+        activeElement && activeElement.classList.remove("active")
+        toActiveElement.classList.add("active")
+        activeElement = toActiveElement
+    }
+
     element.onclick = event => {
         event.stopPropagation()
         const srcElement = event.srcElement
@@ -69,35 +76,6 @@ function ChatTree(element) {
         setGroupExpanded(groupElement, false)
     }
 
-    function getItemByPosition(position) {
-        return _getItem(itemsArray, ...position.split(','))
-
-        function _getItem(items, index, ...rest) {
-            if (!rest.length) {
-                return items[index]
-            }
-            return _getItem(items[index].items, ...rest)
-        }
-    }
-
-    function getGroupOfElement(childElement) {
-        const elementPosition = childElement.dataset.position
-        const parentPosition = elementPosition.split(',').slice(0, -1).join(',')
-        for (let currSibling = childElement.previousSibling; currSibling; currSibling = currSibling.previousSibling) {
-            if (currSibling.dataset.position === parentPosition) {
-                return currSibling
-            }
-        }
-        return null
-    }
-
-    function setActiveElement(toActiveElement) {
-        if (activeElement === toActiveElement) return
-        activeElement && activeElement.classList.remove("active")
-        toActiveElement.classList.add("active")
-        activeElement = toActiveElement
-    }
-
     function addListItem(item, position, addBefore) {
         const li = document.createElement("li")
         const node = document.createTextNode(item.name)
@@ -114,23 +92,43 @@ function ChatTree(element) {
         element.insertBefore(li, addBefore)
 
     }
-    
-    function isGroup(elem){
+
+    function isGroup(elem) {
         return elem.dataset.type === 'group'
     }
-    function isGroupExpanded(groupElem){
+    function isGroupExpanded(groupElem) {
         return groupElem.hasAttribute('expanded')
     }
-    function setGroupExpanded(groupElem, isExpanded){
+    function setGroupExpanded(groupElem, isExpanded) {
         isExpanded ? groupElem.setAttribute('expanded', '') : groupElem.removeAttribute('expanded')
     }
     function isGroupOf(groupElem, childElem) {
         const groupElemPosition = groupElem.dataset.position
         return childElem && childElem.dataset.position.startsWith(groupElemPosition)
     }
+    function getGroupOfElement(childElement) {
+        const elementPosition = childElement.dataset.position
+        const parentPosition = elementPosition.split(',').slice(0, -1).join(',')
+        for (let currSibling = childElement.previousSibling; currSibling; currSibling = currSibling.previousSibling) {
+            if (currSibling.dataset.position === parentPosition) {
+                return currSibling
+            }
+        }
+        return null
+    }
+    function getItemByPosition(position) {
+        return _getItem(itemsArray, ...position.split(','))
+
+        function _getItem(items, index, ...rest) {
+            if (!rest.length) {
+                return items[index]
+            }
+            return _getItem(items[index].items, ...rest)
+        }
+    }
 
     function load(items) {
-        if (itemsArray) clear()
+        clear()
         itemsArray = items
         items.forEach((item, index) => addListItem(item, index))
         setActiveElement(element.firstChild)
