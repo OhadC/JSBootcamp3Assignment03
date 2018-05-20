@@ -2,15 +2,9 @@ function ChatTree(element) {
     let itemsArray
     let activeElement
 
-    function setActiveElement(toActiveElement) {
-        if (activeElement === toActiveElement) return
-        activeElement && activeElement.classList.remove("active")
-        toActiveElement.classList.add("active")
-        activeElement = toActiveElement
-    }
-
     element.onclick = event => {
         event.stopPropagation()
+
         const srcElement = event.srcElement
         if (srcElement.localName === 'li') {
             setActiveElement(srcElement)
@@ -26,6 +20,7 @@ function ChatTree(element) {
 
     element.onkeydown = event => {
         event.stopPropagation()
+        if (!activeElement) return
         switch (event.key) {
             case 'ArrowUp':
                 if (activeElement.previousSibling) setActiveElement(activeElement.previousSibling)
@@ -48,6 +43,13 @@ function ChatTree(element) {
                 if (isGroup(activeElement)) toggleGroup(activeElement)
                 break
         }
+    }
+
+    function setActiveElement(toActiveElement) {
+        if (activeElement === toActiveElement) return
+        activeElement && activeElement.classList.remove("active")
+        toActiveElement.classList.add("active")
+        activeElement = toActiveElement
     }
 
     function toggleGroup(groupElement) {
@@ -138,6 +140,7 @@ function ChatTree(element) {
             element.removeChild(element.firstChild)
         }
         itemsArray = null
+        activeElement = null
     }
     return {
         load,
