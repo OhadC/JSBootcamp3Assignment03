@@ -89,6 +89,9 @@ function ChatTree(element) {
         li.appendChild(textNode)
         li.setAttribute('style', `padding-left: ${(level + 0.5) * 1}em`)
         li.dataset.level = level
+        if (item.type === 'group') {
+            li.setAttribute('group', '')
+        }
 
         li.item = item
         li.parentItem = parent
@@ -97,7 +100,7 @@ function ChatTree(element) {
     }
 
     function isGroup(elem) {
-        return elem.item.type === 'group'
+        return elem.hasAttribute('group')
     }
     function isGroupExpanded(groupElem) {
         return groupElem.hasAttribute('expanded')
