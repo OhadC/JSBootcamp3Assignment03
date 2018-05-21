@@ -4,7 +4,6 @@ function ChatTree(element) {
 
     element.onclick = event => {
         event.stopPropagation()
-
         const srcElement = event.srcElement
         if (srcElement.localName === 'li') {
             setActiveElement(srcElement)
@@ -32,11 +31,11 @@ function ChatTree(element) {
                 if (isGroup(activeElement)) expandGroup(activeElement)
                 break
             case 'ArrowLeft':
-                if (!isGroup(activeElement) || !isGroupExpanded(activeElement)) {
+                if (isGroup(activeElement) && isGroupExpanded(activeElement)) {
+                    foldGroup(activeElement)
+                } else {
                     const parentGroup = getGroupOfElement(activeElement)
                     setActiveElement(parentGroup || element.firstChild)
-                } else {
-                    foldGroup(activeElement)
                 }
                 break
             case 'Enter':
@@ -61,42 +60,44 @@ function ChatTree(element) {
     }
     function expandGroup(groupElement) {
         if (isGroupExpanded(groupElement)) return
-        const groupElementPosition = groupElement.dataset.position
-        const groupItem = getItemByPosition(groupElementPosition)
+        const groupItem = groupElement.item
+        const groupLevel = +(groupElement.dataset.level)
         const addListItemsBefore = groupElement.nextSibling
-        groupItem.items.forEach((item, index) => addListItem(item, `${groupElementPosition},${index}`, addListItemsBefore))
+        groupItem.items.forEach((item, index) => addListItem(item, groupItem, groupLevel + 1, addListItemsBefore))
         setGroupExpanded(groupElement, true)
     }
     function foldGroup(groupElement) {
         if (!isGroupExpanded(groupElement)) return
         let currElement = groupElement.nextSibling
         while (isGroupOf(groupElement, currElement)) {
-            const nextElement = currElement.nextSibling
-            element.removeChild(currElement)
-            currElement = nextElement
+            if (isGroup(currElement) && isGroupExpanded(currElement)) {
+                foldGroup(currElement)
+            } else {
+                const nextElement = currElement.nextSibling
+                element.removeChild(currElement)
+                currElement = nextElement
+            }
         }
         setGroupExpanded(groupElement, false)
     }
 
-    function addListItem(item, position, addBefore) {
+    function addListItem(item, parent, level, addBefore) {
+        level = level || 0
+
         const li = document.createElement("li")
-        const node = document.createTextNode(item.name)
-        li.appendChild(node)
-
-        position = position.toString()
-        li.dataset.position = position
-
-        const level = position.split(",").length - 1
+        const textNode = document.createTextNode(item.name)
+        li.appendChild(textNode)
         li.setAttribute('style', `padding-left: ${(level + 0.5) * 1}em`)
+        li.dataset.level = level
 
-        li.dataset.type = item.type
+        li.item = item
+        li.parentItem = parent
 
         element.insertBefore(li, addBefore)
-
     }
 
     function isGroup(elem) {
-        return elem.dataset.type === 'group'
+        return elem.item.type === 'group'
     }
     function isGroupExpanded(groupElem) {
         return groupElem.hasAttribute('expanded')
@@ -105,34 +106,22 @@ function ChatTree(element) {
         isExpanded ? groupElem.setAttribute('expanded', '') : groupElem.removeAttribute('expanded')
     }
     function isGroupOf(groupElem, childElem) {
-        const groupElemPosition = groupElem.dataset.position
-        return childElem && childElem.dataset.position.startsWith(groupElemPosition)
+        return childElem.parentItem === groupElem.item
     }
     function getGroupOfElement(childElement) {
-        const elementPosition = childElement.dataset.position
-        const parentPosition = elementPosition.split(',').slice(0, -1).join(',')
+        const parentItem = childElement.parentItem
         for (let currSibling = childElement.previousSibling; currSibling; currSibling = currSibling.previousSibling) {
-            if (currSibling.dataset.position === parentPosition) {
+            if (currSibling.item === parentItem) {
                 return currSibling
             }
         }
         return null
     }
-    function getItemByPosition(position) {
-        return _getItem(itemsArray, ...position.split(','))
-
-        function _getItem(items, index, ...rest) {
-            if (!rest.length) {
-                return items[index]
-            }
-            return _getItem(items[index].items, ...rest)
-        }
-    }
 
     function load(items) {
         clear()
         itemsArray = items
-        items.forEach((item, index) => addListItem(item, index))
+        items.forEach(item => addListItem(item, null))
         setActiveElement(element.firstChild)
     }
     function clear() {
